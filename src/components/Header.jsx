@@ -4,8 +4,7 @@ import engFlag from '../assets/eng.png';
 import geoFlag from '../assets/geo.png';
 import rusFlag from '../assets/rus.png';
 
-const Header = ({ activeSection }) => {
-    const [selectedLanguage, setSelectedLanguage] = useState('ENG');
+const Header = ({ activeSection, selectedLanguage, setSelectedLanguage }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -15,12 +14,34 @@ const Header = ({ activeSection }) => {
         { code: 'RUS', label: 'Russian', flag: rusFlag },
     ];
 
-    const navItems = [
-        { id: 'about', label: 'About us' },
-        { id: 'surrogacy', label: 'Surrogacy' },
-        { id: 'egg-donation', label: 'Egg Donation' },
-        { id: 'contact', label: 'Contact' },
-    ];
+    const translations = {
+        ENG: {
+            navItems: [
+                { id: 'about', label: 'About us' },
+                { id: 'surrogacy', label: 'Surrogacy' },
+                { id: 'egg-donation', label: 'Egg Donation' },
+                { id: 'contact', label: 'Contact' },
+            ]
+        },
+        GEO: {
+            navItems: [
+                { id: 'about', label: 'ჩვენს შესახებ' },
+                { id: 'surrogacy', label: 'სუროგაცია' },
+                { id: 'egg-donation', label: 'კვერცხუჯრედის დონაცია' },
+                { id: 'contact', label: 'კონტაქტი' },
+            ]
+        },
+        RUS: {
+            navItems: [
+                { id: 'about', label: 'О нас' },
+                { id: 'surrogacy', label: 'Суброгация' },
+                { id: 'egg-donation', label: 'Донорство яйцеклеток' },
+                { id: 'contact', label: 'Контакты' },
+            ]
+        }
+    };
+
+    const currentTranslation = translations[selectedLanguage] || translations.ENG;
 
     const handleClick = (e, id) => {
         e.preventDefault();
@@ -53,7 +74,7 @@ const Header = ({ activeSection }) => {
                 {/* Desktop Navigation */}
                 <nav className="hidden lg:flex items-center gap-8">
                     <ul className="flex space-x-8">
-                        {navItems.map((item) => (
+                        {currentTranslation.navItems.map((item) => (
                             <li key={item.id}>
                                 <a
                                     href={`#${item.id}`}
@@ -135,7 +156,7 @@ const Header = ({ activeSection }) => {
             }`}>
                 <nav className="container mx-auto px-6 py-8">
                     <ul className="space-y-6">
-                        {navItems.map((item, index) => (
+                        {currentTranslation.navItems.map((item, index) => (
                             <li
                                 key={item.id}
                                 className={`transform transition-all ${
