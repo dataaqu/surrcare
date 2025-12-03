@@ -105,7 +105,7 @@ export default function MobileCardCarousel({ cards }) {
       <div className="md:hidden">
         <div
           ref={scrollRef}
-          className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 scrollbar-hide"
+          className="flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory gap-4 pb-4 scrollbar-hide"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {cards.map((card, index) => (
