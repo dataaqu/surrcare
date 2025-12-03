@@ -653,7 +653,7 @@ function App() {
                   </svg>
                 </div>
                 <div>
-                  <a href="tel:+995599682740" className="text-2xl font-semibold text-primary hover:text-accent transition-colors">
+                  <a href="tel:+995599682740" className="text-lg md:text-2xl font-semibold text-primary hover:text-accent transition-colors">
                     +995 599 68 27 40
                   </a>
                 </div>
