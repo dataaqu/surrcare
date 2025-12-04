@@ -19,25 +19,25 @@ function App() {
   const [selectedLanguage, setSelectedLanguage] = useState('ENG');
 
   const carouselImages = React.useMemo(() => [image1, image2, image3, image4], []);
-  
+
   const carouselTranslations = React.useMemo(() => ({
     ENG: [
       "Premium Pay Package",
-      "Full Privacy Protection", 
+      "Full Privacy Protection",
       "Caring and Supportive Culture",
       "Excellent Facilities and Attention"
     ],
     GEO: [
       "პრემიუმ ანაზღაურება",
-"სრული კონფიდენციალურობა", 
-"მზრუნველი და მხარდამჭერი გარემო",
-"საუკეთესო პირობები და ყურადღება"
+      "სრული კონფიდენციალურობა",
+      "მზრუნველი და მხარდამჭერი გარემო",
+      "საუკეთესო პირობები და ყურადღება"
     ],
     RUS: [
-"Премиальные условия оплаты",
-"Полная конфиденциальность",
-"Забота и поддержка",
-"Комфортные условия и внимание"
+      "Премиальные условия оплаты",
+      "Полная конфиденциальность",
+      "Забота и поддержка",
+      "Комфортные условия и внимание"
     ]
   }), []);
 
@@ -100,7 +100,21 @@ function App() {
           question: "What medical examinations are required?",
           answer: "We perform comprehensive diagnostic procedures including physical examinations, blood tests, ultrasounds, and psychological evaluations. All examinations are provided free of charge."
         }
-      ]
+      ],
+      form: {
+        firstName: "First Name",
+        email: "Email",
+        phone: "Phone",
+        subject: "Subject",
+        selectSubject: "Select Subject",
+        subjectOptions: {
+          surrogacy: "Surrogacy",
+          eggDonation: "Egg Donation",
+          general: "General"
+        },
+        comment: "Comment",
+        submit: "Send Message"
+      }
     },
     GEO: {
       mainDescription: "SurrCare საქართველოს წამყვანი ცენტრია სუროგაციის სფეროში. ცენტრი 15 წელზე მეტი ხნის განმავლობაში უზრუნველყოფს მომსახურებას სუროგაციისა და კვერცხუჯრედის დონაციის მიმართულებით. ჩვენი წარმატების საფუძველია პროფესიონალიზმი, ნდობა, ინდივიდუალური მიდგომა და თანამშრომლობის ყველა ასპექტის სრული იურიდიული თანხლება. ჩვენ ვქმნით გრძელვადიან და მყარ ურთიერთობებს როგორც მომავალ მშობლებთან, ასევე სუროგატ დედებთან.",
@@ -160,7 +174,21 @@ function App() {
           question: "რა სამედიცინო გამოკვლევებია საჭირო?",
           answer: "ჩვენ ვატარებთ ყოვლისმომცველ დიაგნოსტიკურ პროცედურებს, მათ შორის ფიზიკურ გამოკვლევებს, სისხლის ანალიზებს, ულტრაბგერით გამოკვლევას და ფსიქოლოგიურ შეფასებას. ყველა გამოკვლევა უფასოა."
         }
-      ]
+      ],
+      form: {
+        firstName: "სახელი",
+        email: "ელ.ფოსტა",
+        phone: "ტელეფონი",
+        subject: "თემა",
+        selectSubject: "აირჩიეთ თემა",
+        subjectOptions: {
+          surrogacy: "სუროგაცია",
+          eggDonation: "კვერცხუჯრედის დონაცია",
+          general: "ზოგადი"
+        },
+        comment: "კომენტარი",
+        submit: "გაგზავნა"
+      }
     },
     RUS: {
       mainDescription: "SurrCare — один из ведущих центров Грузии в области суррогатного материнства. Центр предоставляет услуги в сфере суррогатного материнства и донорства яйцеклеток более 15 лет. Наш успех основан на профессионализме, доверии, индивидуальном подходе и полном юридическом сопровождении всех аспектов сотрудничества. Мы выстраиваем долгосрочные и надёжные отношения как с будущими родителями, так и с суррогатными матерями.",
@@ -220,7 +248,21 @@ function App() {
           question: "Какие медицинские обследования требуются?",
           answer: "Мы проводим комплексные диагностические процедуры, включая физические обследования, анализы крови, УЗИ и психологические оценки. Все обследования предоставляются бесплатно."
         }
-      ]
+      ],
+      form: {
+        firstName: "Имя",
+        email: "Эл. почта",
+        phone: "Телефон",
+        subject: "Тема",
+        selectSubject: "Выберите тему",
+        subjectOptions: {
+          surrogacy: "Суррогатное материнство",
+          eggDonation: "Донорство яйцеклеток",
+          general: "Общие вопросы"
+        },
+        comment: "Комментарий",
+        submit: "Отправить"
+      }
     }
   }), []);
 
@@ -399,8 +441,8 @@ function App() {
 
   return (
     <div className="min-h-screen bg-bg-light overflow-x-hidden">
-      <Header 
-        activeSection={activeSection} 
+      <Header
+        activeSection={activeSection}
         selectedLanguage={selectedLanguage}
         setSelectedLanguage={setSelectedLanguage}
       />
@@ -635,7 +677,7 @@ function App() {
 
         <Section id="contact" title={currentTranslations.contactTitle} className="bg-gray-50 py-20 !justify-start">
           <div className="w-[90%] mx-auto grid md:grid-cols-2 gap-8 mt-20">
-            {/* First Div - Contact Information */}
+            {/* First Div - Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -645,33 +687,72 @@ function App() {
             >
               <h3 className="text-2xl font-bold text-primary mb-6">{currentTranslations.contactSubtitle}</h3>
 
-              {/* Phone */}
-              <div className="flex items-center space-x-4 mb-8">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#eab2bb' }}>
-                  <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
+              {/* Contact Info at top of form */}
+              <div className="mb-8 flex flex-wrap justify-start items-center gap-6">
+                {/* Phone */}
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#eab2bb' }}>
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <a href="tel:+995599682740" className="text-base font-semibold text-primary hover:text-accent transition-colors">
+                      +995 599 68 27 40
+                    </a>
+                  </div>
                 </div>
-                <div>
-                  <a href="tel:+995599682740" className="text-lg md:text-2xl font-semibold text-primary hover:text-accent transition-colors">
-                    +995 599 68 27 40
-                  </a>
+
+                {/* Email */}
+                <div className="flex items-center  space-x-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#eab2bb' }}>
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <a href="mailto:surrcare@yahoo.com" className="text-base font-semibold text-primary hover:text-accent transition-colors">
+                      surrcare@yahoo.com
+                    </a>
+                  </div>
                 </div>
               </div>
 
-              {/* Email */}
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: '#eab2bb' }}>
-                  <svg className="w-6 h-6 md:w-8 md:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
+              <form className="space-y-4">
                 <div>
-                  <a href="mailto:info@surrcare.ge" className="text-lg md:text-2xl font-semibold text-primary hover:text-accent transition-colors">
-                    info@surrcare.ge
-                  </a>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.firstName}</label>
+                  <input type="text" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
                 </div>
-              </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.email}</label>
+                  <input type="email" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.phone}</label>
+                  <input type="tel" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.subject}</label>
+                  <select className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all bg-white">
+                    <option value="">{currentTranslations.form.selectSubject}</option>
+                    <option value="surrogacy">{currentTranslations.form.subjectOptions.surrogacy}</option>
+                    <option value="eggDonation">{currentTranslations.form.subjectOptions.eggDonation}</option>
+                    <option value="general">{currentTranslations.form.subjectOptions.general}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.comment}</label>
+                  <textarea rows="4" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"></textarea>
+                </div>
+
+                <button type="submit" className="w-full bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all transform hover:scale-[1.02]">
+                  {currentTranslations.form.submit}
+                </button>
+              </form>
             </motion.div>
 
             {/* Second Div - FAQ */}
@@ -693,6 +774,7 @@ function App() {
                   />
                 ))}
               </div>
+
             </motion.div>
           </div>
         </Section>

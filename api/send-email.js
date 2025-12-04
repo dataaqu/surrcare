@@ -1,0 +1,270 @@
+import { Resend } from 'resend';
+import { kv } from '@vercel/kv';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Rate Limiting - IP based
+async function checkIPRateLimit(ip) {
+  const key = `rate_limit:ip:${ip}`;
+  const requests = await kv.get(key) || 0;
+  
+  // 5 მეილი 1 საათში IP-დან
+  if (requests >= 5) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  await kv.set(key, requests + 1, { ex: 3600 }); // 1 საათი
+  return { allowed: true, remaining: 5 - requests - 1 };
+}
+
+// Rate Limiting - Email based
+async function checkEmailRateLimit(email) {
+  const key = `rate_limit:email:${email.toLowerCase()}`;
+  const requests = await kv.get(key) || 0;
+  
+  // 3 მეილი 24 საათში ერთი email-დან
+  if (requests >= 3) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  await kv.set(key, requests + 1, { ex: 86400 }); // 24 საათი
+  return { allowed: true, remaining: 3 - requests - 1 };
+}
+
+// Spam Words Detection
+function containsSpam(text) {
+  const spamWords = [
+    'viagra', 'cialis', 'casino', 'lottery', 'winner', 
+    'congratulations', 'click here', 'free money', 'million dollars',
+    'nigerian prince', 'bitcoin investment', 'crypto investment',
+    'weight loss', 'pharmacy', 'porn', 'xxx'
+  ];
+  
+  const lowerText = text.toLowerCase();
+  return spamWords.some(word => lowerText.includes(word));
+}
+
+// Disposable Email Detection
+function isDisposableEmail(email) {
+  const disposableDomains = [
+    'tempmail.com', 'guerrillamail.com', '10minutemail.com',
+    'mailinator.com', 'throwaway.email', 'temp-mail.org',
+    'yopmail.com', 'maildrop.cc', 'sharklasers.com',
+    'trashmail.com', 'fakeinbox.com'
+  ];
+  
+  const domain = email.split('@')[1]?.toLowerCase();
+  return disposableDomains.includes(domain);
+}
+
+// Email Format Validation
+function isValidEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  return emailRegex.test(email);
+}
+
+// ============================================
+// MAIN HANDLER
+// ============================================
+
+export default async function handler(req, res) {
+  // CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      success: false, 
+      error: 'მხოლოდ POST მეთოდი დაშვებულია' 
+    });
+  }
+
+  try {
+    const { name, email, message, honeypot } = req.body;
+
+    // ============================================
+    // VALIDATION CHECKS
+    // ============================================
+
+    // 1. Honeypot Check (bot trap)
+    if (honeypot) {
+      console.log('🤖 Bot detected via honeypot');
+      // ბოტს "success" ვაჩვენებთ
+      return res.status(200).json({ 
+        success: true,
+        message: 'შეტყობინება გაიგზავნა' 
+      });
+    }
+
+    // 2. Required Fields
+    if (!name || !email || !message) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'ყველა ველი სავალდებულოა' 
+      });
+    }
+
+    // 3. Email Format
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'არასწორი email ფორმატი' 
+      });
+    }
+
+    // 4. Length Limits
+    if (name.length > 100) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'სახელი ძალიან გრძელია (მაქს. 100 სიმბოლო)' 
+      });
+    }
+
+    if (message.length < 10) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'მესიჯი ძალიან მოკლეა (მინ. 10 სიმბოლო)' 
+      });
+    }
+
+    if (message.length > 2000) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'მესიჯი ძალიან გრძელია (მაქს. 2000 სიმბოლო)' 
+      });
+    }
+
+    // 5. Disposable Email Check
+    if (isDisposableEmail(email)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'დროებითი email მისამართები დაშვებული არ არის' 
+      });
+    }
+
+    // 6. Spam Content Check
+    if (containsSpam(name + ' ' + message)) {
+      console.log('🚫 Spam content detected');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'გამოვლინდა არასასურველი შინაარსი' 
+      });
+    }
+
+    // ============================================
+    // RATE LIMITING
+    // ============================================
+
+    // 7. IP Rate Limit
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
+               req.headers['x-real-ip'] || 
+               req.socket.remoteAddress || 
+               'unknown';
+    
+    const ipLimit = await checkIPRateLimit(ip);
+    if (!ipLimit.allowed) {
+      return res.status(429).json({ 
+        success: false, 
+        error: 'ძალიან ბევრი მოთხოვნა ამ IP მისამართიდან. სცადეთ 1 საათში' 
+      });
+    }
+
+    // 8. Email Rate Limit
+    const emailLimit = await checkEmailRateLimit(email);
+    if (!emailLimit.allowed) {
+      return res.status(429).json({ 
+        success: false, 
+        error: 'ამ email მისამართიდან უკვე გაიგზავნა შეტყობინებები. სცადეთ 24 საათში' 
+      });
+    }
+
+    // ============================================
+    // SEND EMAIL
+    // ============================================
+
+    const emailData = await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: process.env.ADMIN_EMAIL,
+      subject: `🔔 ახალი შეტყობინება - ${name}`,
+      replyTo: email,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #007bff; color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+            .content { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
+            .info { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+            .footer { background: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+            .label { font-weight: bold; color: #555; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2 style="margin: 0;">📧 ახალი კონტაქტის შეტყობინება</h2>
+            </div>
+            
+            <div class="content">
+              <div class="info">
+                <p><span class="label">👤 სახელი:</span> ${name}</p>
+                <p><span class="label">📧 Email:</span> <a href="mailto:${email}">${email}</a></p>
+                <p><span class="label">🌐 IP Address:</span> ${ip}</p>
+                <p><span class="label">📅 თარიღი:</span> ${new Date().toLocaleString('ka-GE', { 
+                  timeZone: 'Asia/Tbilisi' 
+                })}</p>
+              </div>
+              
+              <div class="info">
+                <p class="label">💬 მესიჯი:</p>
+                <p style="white-space: pre-wrap;">${message}</p>
+              </div>
+              
+              <div class="info" style="border-left-color: #28a745;">
+                <p style="margin: 0; font-size: 12px;">
+                  <span class="label">ℹ️ Rate Limit Status:</span><br>
+                  IP: ${ipLimit.remaining} მოთხოვნა დარჩა (1 საათში)<br>
+                  Email: ${emailLimit.remaining} მოთხოვნა დარჩა (24 საათში)
+                </p>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <p>ეს შეტყობინება გამოიგზავნა თქვენი საიტის კონტაქტის ფორმიდან</p>
+              <p>პასუხის გასაცემად დააჭირეთ "Reply" ღილაკს</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    console.log('✅ Email sent:', emailData.id);
+
+    return res.status(200).json({ 
+      success: true,
+      message: 'შეტყობინება წარმატებით გაიგზავნა!',
+      emailId: emailData.id
+    });
+
+  } catch (error) {
+    console.error('❌ Email sending error:', error);
+    
+    return res.status(500).json({ 
+      success: false, 
+      error: 'სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით'
+    });
+  }
+}
