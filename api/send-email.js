@@ -7,35 +7,30 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // HELPER FUNCTIONS
 // ============================================
 
-// Rate Limiting - IP based
 async function checkIPRateLimit(ip) {
   const key = `rate_limit:ip:${ip}`;
   const requests = await kv.get(key) || 0;
   
-  // 5 მეილი 1 საათში IP-დან
   if (requests >= 5) {
     return { allowed: false, remaining: 0 };
   }
   
-  await kv.set(key, requests + 1, { ex: 3600 }); // 1 საათი
+  await kv.set(key, requests + 1, { ex: 3600 });
   return { allowed: true, remaining: 5 - requests - 1 };
 }
 
-// Rate Limiting - Email based
 async function checkEmailRateLimit(email) {
   const key = `rate_limit:email:${email.toLowerCase()}`;
   const requests = await kv.get(key) || 0;
   
-  // 3 მეილი 24 საათში ერთი email-დან
   if (requests >= 3) {
     return { allowed: false, remaining: 0 };
   }
   
-  await kv.set(key, requests + 1, { ex: 86400 }); // 24 საათი
+  await kv.set(key, requests + 1, { ex: 86400 });
   return { allowed: true, remaining: 3 - requests - 1 };
 }
 
-// Spam Words Detection
 function containsSpam(text) {
   const spamWords = [
     'viagra', 'cialis', 'casino', 'lottery', 'winner', 
@@ -48,7 +43,6 @@ function containsSpam(text) {
   return spamWords.some(word => lowerText.includes(word));
 }
 
-// Disposable Email Detection
 function isDisposableEmail(email) {
   const disposableDomains = [
     'tempmail.com', 'guerrillamail.com', '10minutemail.com',
@@ -61,7 +55,6 @@ function isDisposableEmail(email) {
   return disposableDomains.includes(domain);
 }
 
-// Email Format Validation
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   return emailRegex.test(email);
@@ -72,7 +65,6 @@ function isValidEmail(email) {
 // ============================================
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -91,21 +83,16 @@ export default async function handler(req, res) {
   try {
     const { name, email, message, honeypot } = req.body;
 
-    // ============================================
-    // VALIDATION CHECKS
-    // ============================================
-
-    // 1. Honeypot Check (bot trap)
+    // Honeypot Check
     if (honeypot) {
       console.log('🤖 Bot detected via honeypot');
-      // ბოტს "success" ვაჩვენებთ
       return res.status(200).json({ 
         success: true,
         message: 'შეტყობინება გაიგზავნა' 
       });
     }
 
-    // 2. Required Fields
+    // Required Fields
     if (!name || !email || !message) {
       return res.status(400).json({ 
         success: false, 
@@ -113,7 +100,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. Email Format
+    // Email Format
     if (!isValidEmail(email)) {
       return res.status(400).json({ 
         success: false, 
@@ -121,7 +108,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 4. Length Limits
+    // Length Limits
     if (name.length > 100) {
       return res.status(400).json({ 
         success: false, 
@@ -143,7 +130,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 5. Disposable Email Check
+    // Disposable Email Check
     if (isDisposableEmail(email)) {
       return res.status(400).json({ 
         success: false, 
@@ -151,7 +138,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 6. Spam Content Check
+    // Spam Content Check
     if (containsSpam(name + ' ' + message)) {
       console.log('🚫 Spam content detected');
       return res.status(400).json({ 
@@ -160,11 +147,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ============================================
-    // RATE LIMITING
-    // ============================================
-
-    // 7. IP Rate Limit
+    // IP Rate Limit
     const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
                req.headers['x-real-ip'] || 
                req.socket.remoteAddress || 
@@ -178,7 +161,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 8. Email Rate Limit
+    // Email Rate Limit
     const emailLimit = await checkEmailRateLimit(email);
     if (!emailLimit.allowed) {
       return res.status(429).json({ 
@@ -188,10 +171,16 @@ export default async function handler(req, res) {
     }
 
     // ============================================
-    // SEND EMAIL
+    // SEND EMAIL - FIXED VERSION
     // ============================================
 
-    const emailData = await resend.emails.send({
+    console.log('📧 Attempting to send email...');
+    console.log('From: onboarding@resend.dev');
+    console.log('To:', process.env.ADMIN_EMAIL);
+    console.log('Name:', name);
+    console.log('Email:', email);
+
+    const result = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: process.env.ADMIN_EMAIL,
       subject: `🔔 ახალი შეტყობინება - ${name}`,
@@ -251,20 +240,49 @@ export default async function handler(req, res) {
       `
     });
 
-    console.log('✅ Email sent:', emailData.id);
+    // ✅ DETAILED LOGGING
+    console.log('📬 Resend API Response:', JSON.stringify(result, null, 2));
 
+    // Check if result has error
+    if (result.error) {
+      console.error('❌ Resend returned error:', result.error);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'მეილის გაგზავნა ვერ მოხერხდა',
+        details: result.error
+      });
+    }
+
+    // Check if result has id (success)
+    if (result.data && result.data.id) {
+      console.log('✅ Email sent successfully! ID:', result.data.id);
+      return res.status(200).json({ 
+        success: true,
+        message: 'შეტყობინება წარმატებით გაიგზავნა!',
+        emailId: result.data.id
+      });
+    }
+
+    // Fallback - no error but also no id
+    console.warn('⚠️ Resend response unclear:', result);
     return res.status(200).json({ 
       success: true,
-      message: 'შეტყობინება წარმატებით გაიგზავნა!',
-      emailId: emailData.id
+      message: 'შეტყობინება გაიგზავნა',
+      emailId: result.id || 'unknown'
     });
 
   } catch (error) {
     console.error('❌ Email sending error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     
     return res.status(500).json({ 
       success: false, 
-      error: 'სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით'
+      error: 'სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით',
+      details: error.message
     });
   }
 }
