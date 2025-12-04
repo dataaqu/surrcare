@@ -17,6 +17,19 @@ import eggImage from './assets/egg.webp';
 function App() {
   const [activeSection, setActiveSection] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('ENG');
+  
+  // Contact Form State
+  const [formData, setFormData] = useState({
+    firstName: '',
+    email: '',
+    phone: '',
+    subject: '',
+    comment: '',
+    honeypot: '' // bot trap
+  });
+  const [loading, setLoading] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState({ type: '', message: '' });
 
   const carouselImages = React.useMemo(() => [image1, image2, image3, image4], []);
 
@@ -114,6 +127,12 @@ function App() {
         },
         comment: "Comment",
         submit: "Send Message"
+      },
+      formValidation: {
+        fillAllFields: "Please fill in all required fields",
+        emailSent: "Message sent successfully!",
+        emailError: "Failed to send message. Please try again later.",
+        sending: "Sending..."
       }
     },
     GEO: {
@@ -188,6 +207,12 @@ function App() {
         },
         comment: "კომენტარი",
         submit: "გაგზავნა"
+      },
+      formValidation: {
+        fillAllFields: "გთხოვთ შეავსოთ ყველა სავალდებულო ველი",
+        emailSent: "შეტყობინება წარმატებით გაიგზავნა!",
+        emailError: "შეტყობინების გაგზავნა ვერ მოხერხდა. გთხოვთ სცადოთ მოგვიანებით.",
+        sending: "იგზავნება..."
       }
     },
     RUS: {
@@ -262,12 +287,97 @@ function App() {
         },
         comment: "Комментарий",
         submit: "Отправить"
+      },
+      formValidation: {
+        fillAllFields: "Пожалуйста, заполните все обязательные поля",
+        emailSent: "Сообщение успешно отправлено!",
+        emailError: "Не удалось отправить сообщение. Попробуйте позже.",
+        sending: "Отправляется..."
       }
     }
   }), []);
 
   const carouselTitles = carouselTranslations[selectedLanguage] || carouselTranslations.ENG;
   const currentTranslations = translations[selectedLanguage] || translations.ENG;
+
+  // Contact Form Functions
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Validation - check required fields
+    if (!formData.firstName || !formData.email || !formData.comment) {
+      setPopupMessage({
+        type: 'error',
+        message: currentTranslations.formValidation.fillAllFields
+      });
+      setShowPopup(true);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.firstName,
+          email: formData.email,
+          message: `
+Phone: ${formData.phone || 'Not provided'}
+Subject: ${formData.subject || 'General'}
+
+Message:
+${formData.comment}
+          `.trim(),
+          honeypot: formData.honeypot
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setPopupMessage({
+          type: 'success',
+          message: currentTranslations.formValidation.emailSent
+        });
+        // Reset form
+        setFormData({
+          firstName: '',
+          email: '',
+          phone: '',
+          subject: '',
+          comment: '',
+          honeypot: ''
+        });
+      } else {
+        setPopupMessage({
+          type: 'error',
+          message: data.error || currentTranslations.formValidation.emailError
+        });
+      }
+    } catch (error) {
+      setPopupMessage({
+        type: 'error',
+        message: currentTranslations.formValidation.emailError
+      });
+    } finally {
+      setLoading(false);
+      setShowPopup(true);
+    }
+  };
+
+  const closePopup = () => {
+    setShowPopup(false);
+    setPopupMessage({ type: '', message: '' });
+  };
 
   const cardData = React.useMemo(() => {
     if (selectedLanguage === 'GEO') {
@@ -718,25 +828,70 @@ function App() {
                 </div>
               </div>
 
-              <form className="space-y-4">
+              <form className="space-y-4" onSubmit={handleFormSubmit}>
+                {/* Honeypot field - hidden from users, visible to bots */}
+                <input
+                  type="text"
+                  name="honeypot"
+                  value={formData.honeypot}
+                  onChange={handleFormChange}
+                  style={{ display: 'none' }}
+                  tabIndex="-1"
+                  autoComplete="off"
+                  aria-hidden="true"
+                />
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.firstName}</label>
-                  <input type="text" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                  <label htmlFor="contact-firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                    {currentTranslations.form.firstName} <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="contact-firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.email}</label>
-                  <input type="email" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                  <label htmlFor="contact-email" className="block text-sm font-medium text-gray-700 mb-1">
+                    {currentTranslations.form.email} <span className="text-red-500">*</span>
+                  </label>
+                  <input 
+                    type="email" 
+                    id="contact-email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.phone}</label>
-                  <input type="tel" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" />
+                  <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.phone}</label>
+                  <input 
+                    type="tel" 
+                    id="contact-phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" 
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.subject}</label>
-                  <select className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all bg-white">
+                  <label htmlFor="contact-subject" className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.subject}</label>
+                  <select 
+                    id="contact-subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleFormChange}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all bg-white"
+                  >
                     <option value="">{currentTranslations.form.selectSubject}</option>
                     <option value="surrogacy">{currentTranslations.form.subjectOptions.surrogacy}</option>
                     <option value="eggDonation">{currentTranslations.form.subjectOptions.eggDonation}</option>
@@ -745,12 +900,30 @@ function App() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{currentTranslations.form.comment}</label>
-                  <textarea rows="4" className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"></textarea>
+                  <label htmlFor="contact-comment" className="block text-sm font-medium text-gray-700 mb-1">
+                    {currentTranslations.form.comment} <span className="text-red-500">*</span>
+                  </label>
+                  <textarea 
+                    rows="4" 
+                    id="contact-comment"
+                    name="comment"
+                    value={formData.comment}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all resize-none"
+                  ></textarea>
                 </div>
 
-                <button type="submit" className="w-full bg-primary text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all transform hover:scale-[1.02]">
-                  {currentTranslations.form.submit}
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className={`w-full font-bold py-3 px-6 rounded-lg transition-all transform ${
+                    loading 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-primary text-white hover:bg-opacity-90 hover:scale-[1.02]'
+                  }`}
+                >
+                  {loading ? currentTranslations.formValidation.sending : currentTranslations.form.submit}
                 </button>
               </form>
             </motion.div>
@@ -779,6 +952,42 @@ function App() {
           </div>
         </Section>
       </main>
+
+      {/* Popup Modal */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl"
+          >
+            <div className="text-center">
+              <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 ${
+                popupMessage.type === 'success' ? 'bg-green-100' : 'bg-red-100'
+              }`}>
+                {popupMessage.type === 'success' ? (
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+              </div>
+              <p className="text-gray-800 mb-6 text-lg">{popupMessage.message}</p>
+              <button
+                onClick={closePopup}
+                className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-opacity-90 transition-all"
+              >
+                {selectedLanguage === 'GEO' ? 'დახურვა' : selectedLanguage === 'RUS' ? 'Закрыть' : 'Close'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       <Footer activeSection={activeSection} selectedLanguage={selectedLanguage} />
     </div>
   );
