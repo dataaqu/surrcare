@@ -23,7 +23,7 @@ const Footer = ({ activeSection, selectedLanguage = 'ENG' }) => {
         },
         GEO: {
             navItems: [
-                { id: 'about', label: 'ჩვენს შესახებ' },
+                { id: 'about', label: 'ჩვენ შესახებ' },
                 { id: 'surrogacy', label: 'სუროგაცია' },
                 { id: 'egg-donation', label: 'კვერცხუჯრედის დონაცია' },
                 { id: 'contact', label: 'კონტაქტი' }
