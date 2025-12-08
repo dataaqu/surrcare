@@ -35,7 +35,7 @@ function App() {
 
   const carouselTranslations = React.useMemo(() => ({
     ENG: [
-      "High Pay Package",
+      "High Pay",
       "Full confidentiality",
       "Caring and friendly environment",
       "Best conditions and constant attention"
