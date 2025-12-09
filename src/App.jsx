@@ -76,7 +76,6 @@ function App() {
       ],
       eggDonationTitle: "Egg Donation",
       eggDonationParagraphs: [
-        "Surrcare connects potential egg donors quickly with intended parents, including international clients.",
         "By joining this program, you'll help couples struggling with infertility achieve parenthood while receiving substantial financial compensation. We prioritize each donor's well-being and ensure premium payment for quality eggs.",
         "Previous parenthood is not required to become an egg donor.",
         "Surrcare offers the industry's highest compensation rates and creates an environment where every donor feels secure and valued.",
@@ -84,7 +83,6 @@ function App() {
       ],
       eggDonationBenefitsTitle: "Program participants receive:",
       eggDonationBenefits: [
-        "Legally certified contracts",
         "Complimentary diagnostic testing",
         "Dedicated personal coordinator for ongoing support"
       ],
@@ -94,7 +92,7 @@ function App() {
       faq: [
         {
           question: "Who can become a surrogate mother?",
-          answer: "Women aged 20-39 with optimal physical and mental health who have a history of childbirth can become surrogate mothers."
+          answer: "Women aged 20-38 with optimal physical and mental health who have a history of childbirth can become surrogate mothers."
         },
         {
           question: "How long does the surrogacy process take?",
@@ -164,7 +162,6 @@ function App() {
       ],
       eggDonationTitle: "კვერცხუჯრედის დონაცია",
       eggDonationParagraphs: [
-        "Surrcare სწრაფად აკავშირებს კვერცხუჯრედის დონორებს მომავალ მშობლებთან, მათ შორის საერთაშორისო კლიენტებთან.",
         "ამ პროგრამაში მონაწილეობით თქვენ დაეხმარებით იმ წყვილებს, რომლებსაც უშვილობის პრობლემა აქვთ და ამავდროულად მიიღებთ მნიშვნელოვან ფინანსურ ანაზღაურებას. ჩვენთვის პრიორიტეტია თითოეული დონორის კეთილდღეობა და ვუზრუნველყოფთ პრემიუმ ანაზღაურებას ხარისხიანი კვერცხუჯრედებისთვის.",
         "კვერცხუჯრედის დონორად გახდომისთვის არ არის საჭირო, რომ თქვენ უკვე გყავდეთ შვილი.",
         "Surrcare გთავაზობთ ინდუსტრიაში ყველაზე მაღალ ანაზღაურებას და ქმნის გარემოს, სადაც ყოველი დონორი გრძნობს თავს უსაფრთხოდ და ღირსეულად.",
@@ -172,7 +169,6 @@ function App() {
       ],
       eggDonationBenefitsTitle: "პროგრამის მონაწილეები მიიღებენ:",
       eggDonationBenefits: [
-        "იურიდიულად დამოწმებული ხელშეკრულებები",
         "უფასო დიაგნოსტიკური გამოკვლევა",
         "პირადი კოორდინატორი მუდმივი მხარდაჭერისთვის"
       ],
@@ -182,7 +178,7 @@ function App() {
       faq: [
         {
           question: "ვინ შეიძლება გახდეს სუროგატი დედა?",
-          answer: "ქალები 20-39 წლის ასაკის, ოპტიმალური ფიზიკური და მენტალური ჯანმრთელობით, რომლებსაც აქვთ მშობიარობის ისტორია."
+          answer: "ქალები 20-38 წლის ასაკის, ოპტიმალური ფიზიკური და მენტალური ჯანმრთელობით, რომლებსაც აქვთ მშობიარობის ისტორია."
         },
         {
           question: "რამდენ ხანს გრძელდება სუროგაციის პროცესი?",
@@ -251,7 +247,6 @@ function App() {
       ],
       eggDonationTitle: "Донорство яйцеклеток",
       eggDonationParagraphs: [
-        "Surrcare быстро связывает доноров яйцеклеток с будущими родителями, включая международных клиентов",
         "Участвуя в этой программе, вы поможете парам, сталкивающимся с проблемой бесплодия, стать родителями и при этом получите существенную финансовую компенсацию. Для нас приоритетом является благополучие каждого донора, и мы обеспечиваем премиальное вознаграждение за качественные яйцеклетки",
         "Для того чтобы стать донором яйцеклеток, не требуется наличие собственных детей",
         "Surrcare предлагает самые высокие ставки компенсации в индустрии и создаёт среду, в которой каждый донор чувствует себя защищённым и ценным",
@@ -259,7 +254,6 @@ function App() {
       ],
       eggDonationBenefitsTitle: "Участники программы получают:",
       eggDonationBenefits: [
-        "Юридически заверенные договоры",
         "Бесплатное диагностическое тестирование",
         "Выделенный личный координатор для постоянной поддержки"
       ],
@@ -269,7 +263,7 @@ function App() {
       faq: [
         {
           question: "Кто может стать суррогатной матерью?",
-          answer: "Женщины в возрасте 20-39 лет с оптимальным физическим и психическим здоровьем, имеющие историю родов, могут стать суррогатными матерями."
+          answer: "Женщины в возрасте 20-38 лет с оптимальным физическим и психическим здоровьем, имеющие историю родов, могут стать суррогатными матерями."
         },
         {
           question: "Сколько времени занимает процесс суррогатного материнства?",
@@ -423,7 +417,7 @@ ${formData.comment}
           content: (
             <div>
               <p className="text-lg leading-relaxed mb-4">
-                ყველა ხელშეკრულება იურიდიულად დამოწმებული და რეგისტრირებულია.
+                ყველა ხელშეკრულება იურიდიულად გამართულია.
               </p>
               <p className="text-lg leading-relaxed mb-4">
                 ჩვენი ძირითადი ღირებულებებია: ოჯახური გარემო, კომფორტული პირობები და ზრუნვა თითოეული მხარისთვის. დონორებისა და სუროგატი დედების კეთილდღეობა განსაზღვრავს  წარმატებას.
