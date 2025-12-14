@@ -530,7 +530,7 @@ ${formData.comment}
           content: (
             <div>
               <p className="text-lg leading-relaxed mb-4">
-                SurrCare collaborates with Georgia's best reproductive clinics: Zhordania, Inova, Karaps Medline, and Reproart. These facilities have qualified specialists and modern equipment ensuring high-quality IVF procedures.
+                SurrCare collaborates with Georgia's best reproductive clinics: Zhordania, Inova, Caraps Medline, and Reproart. These facilities have qualified specialists and modern equipment ensuring high-quality IVF procedures.
               </p>
               <p className="text-lg leading-relaxed">
                 We also work with international reproductive clinics, providing higher remuneration through global programs.
