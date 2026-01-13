@@ -10,11 +10,11 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 async function checkIPRateLimit(ip) {
   const key = `rate_limit:ip:${ip}`;
   const requests = await kv.get(key) || 0;
-  
+
   if (requests >= 5) {
     return { allowed: false, remaining: 0 };
   }
-  
+
   await kv.set(key, requests + 1, { ex: 3600 });
   return { allowed: true, remaining: 5 - requests - 1 };
 }
@@ -22,23 +22,23 @@ async function checkIPRateLimit(ip) {
 async function checkEmailRateLimit(email) {
   const key = `rate_limit:email:${email.toLowerCase()}`;
   const requests = await kv.get(key) || 0;
-  
+
   if (requests >= 3) {
     return { allowed: false, remaining: 0 };
   }
-  
+
   await kv.set(key, requests + 1, { ex: 86400 });
   return { allowed: true, remaining: 3 - requests - 1 };
 }
 
 function containsSpam(text) {
   const spamWords = [
-    'viagra', 'cialis', 'casino', 'lottery', 'winner', 
+    'viagra', 'cialis', 'casino', 'lottery', 'winner',
     'congratulations', 'click here', 'free money', 'million dollars',
     'nigerian prince', 'bitcoin investment', 'crypto investment',
     'weight loss', 'pharmacy', 'porn', 'xxx'
   ];
-  
+
   const lowerText = text.toLowerCase();
   return spamWords.some(word => lowerText.includes(word));
 }
@@ -50,7 +50,7 @@ function isDisposableEmail(email) {
     'yopmail.com', 'maildrop.cc', 'sharklasers.com',
     'trashmail.com', 'fakeinbox.com'
   ];
-  
+
   const domain = email.split('@')[1]?.toLowerCase();
   return disposableDomains.includes(domain);
 }
@@ -74,9 +74,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      success: false, 
-      error: 'მხოლოდ POST მეთოდი დაშვებულია' 
+    return res.status(405).json({
+      success: false,
+      errorCode: 'methodNotAllowed'
     });
   }
 
@@ -86,87 +86,87 @@ export default async function handler(req, res) {
     // Honeypot Check
     if (honeypot) {
       console.log('🤖 Bot detected via honeypot');
-      return res.status(200).json({ 
+      return res.status(200).json({
         success: true,
-        message: 'შეტყობინება გაიგზავნა' 
+        message: 'შეტყობინება გაიგზავნა'
       });
     }
 
     // Required Fields
     if (!name || !email || !message) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'ყველა ველი სავალდებულოა' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'allFieldsRequired'
       });
     }
 
     // Email Format
     if (!isValidEmail(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'არასწორი email ფორმატი' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'invalidEmailFormat'
       });
     }
 
     // Length Limits
     if (name.length > 100) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'სახელი ძალიან გრძელია (მაქს. 100 სიმბოლო)' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'nameTooLong'
       });
     }
 
     if (message.length < 10) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'მესიჯი ძალიან მოკლეა (მინ. 10 სიმბოლო)' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'messageTooShort'
       });
     }
 
     if (message.length > 2000) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'მესიჯი ძალიან გრძელია (მაქს. 2000 სიმბოლო)' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'messageTooLong'
       });
     }
 
     // Disposable Email Check
     if (isDisposableEmail(email)) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'დროებითი email მისამართები დაშვებული არ არის' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'disposableEmailNotAllowed'
       });
     }
 
     // Spam Content Check
     if (containsSpam(name + ' ' + message)) {
       console.log('🚫 Spam content detected');
-      return res.status(400).json({ 
-        success: false, 
-        error: 'გამოვლინდა არასასურველი შინაარსი' 
+      return res.status(400).json({
+        success: false,
+        errorCode: 'spamContentDetected'
       });
     }
 
     // IP Rate Limit
-    const ip = req.headers['x-forwarded-for']?.split(',')[0] || 
-               req.headers['x-real-ip'] || 
-               req.socket.remoteAddress || 
+    const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
+               req.headers['x-real-ip'] ||
+               req.socket.remoteAddress ||
                'unknown';
-    
+
     const ipLimit = await checkIPRateLimit(ip);
     if (!ipLimit.allowed) {
-      return res.status(429).json({ 
-        success: false, 
-        error: 'ძალიან ბევრი მოთხოვნა ამ IP მისამართიდან. სცადეთ 1 საათში' 
+      return res.status(429).json({
+        success: false,
+        errorCode: 'ipRateLimitExceeded'
       });
     }
 
     // Email Rate Limit
     const emailLimit = await checkEmailRateLimit(email);
     if (!emailLimit.allowed) {
-      return res.status(429).json({ 
-        success: false, 
-        error: 'ამ email მისამართიდან უკვე გაიგზავნა შეტყობინებები. სცადეთ 24 საათში' 
+      return res.status(429).json({
+        success: false,
+        errorCode: 'emailRateLimitExceeded'
       });
     }
 
@@ -205,22 +205,22 @@ export default async function handler(req, res) {
             <div class="header">
               <h2 style="margin: 0;">📧 ახალი კონტაქტის შეტყობინება</h2>
             </div>
-            
+
             <div class="content">
               <div class="info">
                 <p><span class="label">👤 სახელი:</span> ${name}</p>
                 <p><span class="label">📧 Email:</span> <a href="mailto:${email}">${email}</a></p>
                 <p><span class="label">🌐 IP Address:</span> ${ip}</p>
-                <p><span class="label">📅 თარიღი:</span> ${new Date().toLocaleString('ka-GE', { 
-                  timeZone: 'Asia/Tbilisi' 
+                <p><span class="label">📅 თარიღი:</span> ${new Date().toLocaleString('ka-GE', {
+                  timeZone: 'Asia/Tbilisi'
                 })}</p>
               </div>
-              
+
               <div class="info">
                 <p class="label">💬 მესიჯი:</p>
                 <p style="white-space: pre-wrap;">${message}</p>
               </div>
-              
+
               <div class="info" style="border-left-color: #28a745;">
                 <p style="margin: 0; font-size: 12px;">
                   <span class="label">ℹ️ Rate Limit Status:</span><br>
@@ -229,7 +229,7 @@ export default async function handler(req, res) {
                 </p>
               </div>
             </div>
-            
+
             <div class="footer">
               <p>ეს შეტყობინება გამოიგზავნა თქვენი საიტის კონტაქტის ფორმიდან</p>
               <p>პასუხის გასაცემად დააჭირეთ "Reply" ღილაკს</p>
@@ -246,9 +246,9 @@ export default async function handler(req, res) {
     // Check if result has error
     if (result.error) {
       console.error('❌ Resend returned error:', result.error);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'მეილის გაგზავნა ვერ მოხერხდა',
+      return res.status(500).json({
+        success: false,
+        errorCode: 'emailSendFailed',
         details: result.error
       });
     }
@@ -256,7 +256,7 @@ export default async function handler(req, res) {
     // Check if result has id (success)
     if (result.data && result.data.id) {
       console.log('✅ Email sent successfully! ID:', result.data.id);
-      return res.status(200).json({ 
+      return res.status(200).json({
         success: true,
         message: 'შეტყობინება წარმატებით გაიგზავნა!',
         emailId: result.data.id
@@ -265,7 +265,7 @@ export default async function handler(req, res) {
 
     // Fallback - no error but also no id
     console.warn('⚠️ Resend response unclear:', result);
-    return res.status(200).json({ 
+    return res.status(200).json({
       success: true,
       message: 'შეტყობინება გაიგზავნა',
       emailId: result.id || 'unknown'
@@ -278,10 +278,10 @@ export default async function handler(req, res) {
       stack: error.stack,
       name: error.name
     });
-    
-    return res.status(500).json({ 
-      success: false, 
-      error: 'სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით',
+
+    return res.status(500).json({
+      success: false,
+      errorCode: 'serverError',
       details: error.message
     });
   }

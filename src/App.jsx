@@ -137,7 +137,22 @@ function App() {
         fillAllFields: "Please fill in all required fields",
         emailSent: "Message sent successfully!",
         emailError: "Failed to send message. Please try again later.",
-        sending: "Sending..."
+        sending: "Sending...",
+        networkError: "Network error. Please check your internet connection."
+      },
+      serverErrors: {
+        methodNotAllowed: "Only POST method is allowed",
+        allFieldsRequired: "All fields are required",
+        invalidEmailFormat: "Invalid email format",
+        nameTooLong: "Name is too long (max 100 characters)",
+        messageTooShort: "Message is too short (min 10 characters)",
+        messageTooLong: "Message is too long (max 2000 characters)",
+        disposableEmailNotAllowed: "Temporary email addresses are not allowed",
+        spamContentDetected: "Inappropriate content detected",
+        ipRateLimitExceeded: "Too many requests from this IP address. Please try again in 1 hour",
+        emailRateLimitExceeded: "Messages have already been sent from this email. Please try again in 24 hours",
+        emailSendFailed: "Failed to send email",
+        serverError: "Server error. Please try again later"
       }
     },
     GEO: {
@@ -223,7 +238,22 @@ function App() {
         fillAllFields: "გთხოვთ შეავსოთ ყველა სავალდებულო ველი",
         emailSent: "შეტყობინება წარმატებით გაიგზავნა!",
         emailError: "შეტყობინების გაგზავნა ვერ მოხერხდა. გთხოვთ სცადოთ მოგვიანებით.",
-        sending: "იგზავნება..."
+        sending: "იგზავნება...",
+        networkError: "ქსელის შეცდომა. გთხოვთ შეამოწმოთ ინტერნეტ კავშირი."
+      },
+      serverErrors: {
+        methodNotAllowed: "მხოლოდ POST მეთოდი დაშვებულია",
+        allFieldsRequired: "ყველა ველი სავალდებულოა",
+        invalidEmailFormat: "არასწორი email ფორმატი",
+        nameTooLong: "სახელი ძალიან გრძელია (მაქს. 100 სიმბოლო)",
+        messageTooShort: "მესიჯი ძალიან მოკლეა (მინ. 10 სიმბოლო)",
+        messageTooLong: "მესიჯი ძალიან გრძელია (მაქს. 2000 სიმბოლო)",
+        disposableEmailNotAllowed: "დროებითი email მისამართები დაშვებული არ არის",
+        spamContentDetected: "გამოვლინდა არასასურველი შინაარსი",
+        ipRateLimitExceeded: "ძალიან ბევრი მოთხოვნა ამ IP მისამართიდან. სცადეთ 1 საათში",
+        emailRateLimitExceeded: "ამ email მისამართიდან უკვე გაიგზავნა შეტყობინებები. სცადეთ 24 საათში",
+        emailSendFailed: "მეილის გაგზავნა ვერ მოხერხდა",
+        serverError: "სერვერის შეცდომა. გთხოვთ სცადოთ მოგვიანებით"
       }
     },
     RUS: {
@@ -308,7 +338,22 @@ function App() {
         fillAllFields: "Пожалуйста, заполните все обязательные поля",
         emailSent: "Сообщение успешно отправлено!",
         emailError: "Не удалось отправить сообщение. Попробуйте позже.",
-        sending: "Отправляется..."
+        sending: "Отправляется...",
+        networkError: "Ошибка сети. Пожалуйста, проверьте подключение к интернету."
+      },
+      serverErrors: {
+        methodNotAllowed: "Разрешён только метод POST",
+        allFieldsRequired: "Все поля обязательны",
+        invalidEmailFormat: "Неверный формат email",
+        nameTooLong: "Имя слишком длинное (макс. 100 символов)",
+        messageTooShort: "Сообщение слишком короткое (мин. 10 символов)",
+        messageTooLong: "Сообщение слишком длинное (макс. 2000 символов)",
+        disposableEmailNotAllowed: "Временные email адреса не допускаются",
+        spamContentDetected: "Обнаружен нежелательный контент",
+        ipRateLimitExceeded: "Слишком много запросов с этого IP адреса. Попробуйте через 1 час",
+        emailRateLimitExceeded: "С этого email уже были отправлены сообщения. Попробуйте через 24 часа",
+        emailSendFailed: "Не удалось отправить email",
+        serverError: "Ошибка сервера. Пожалуйста, попробуйте позже"
       }
     }
   }), []);
@@ -374,15 +419,19 @@ ${formData.comment}
           honeypot: ''
         });
       } else {
+        // Translate error code from server
+        const errorMessage = data.errorCode && currentTranslations.serverErrors?.[data.errorCode]
+          ? currentTranslations.serverErrors[data.errorCode]
+          : currentTranslations.formValidation.emailError;
         setPopupMessage({
           type: 'error',
-          message: data.error || currentTranslations.formValidation.emailError
+          message: errorMessage
         });
       }
     } catch (error) {
       setPopupMessage({
         type: 'error',
-        message: currentTranslations.formValidation.emailError
+        message: currentTranslations.formValidation.networkError
       });
     } finally {
       setLoading(false);
