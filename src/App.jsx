@@ -886,8 +886,8 @@ ${formData.comment}
                     </svg>
                   </div>
                   <div>
-                    <a href="mailto:surrcare@yahoo.com" className="text-base font-semibold text-primary hover:text-accent transition-colors">
-                      surrcare@yahoo.com
+                    <a href="mailto:surrcaree@gmail.com" className="text-base font-semibold text-primary hover:text-accent transition-colors">
+                      surrcaree@gmail.com
                     </a>
                   </div>
                 </div>
