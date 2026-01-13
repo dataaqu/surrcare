@@ -1,35 +1,10 @@
 import { Resend } from 'resend';
-import { kv } from '@vercel/kv';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
-
-async function checkIPRateLimit(ip) {
-  const key = `rate_limit:ip:${ip}`;
-  const requests = await kv.get(key) || 0;
-
-  if (requests >= 5) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  await kv.set(key, requests + 1, { ex: 3600 });
-  return { allowed: true, remaining: 5 - requests - 1 };
-}
-
-async function checkEmailRateLimit(email) {
-  const key = `rate_limit:email:${email.toLowerCase()}`;
-  const requests = await kv.get(key) || 0;
-
-  if (requests >= 3) {
-    return { allowed: false, remaining: 0 };
-  }
-
-  await kv.set(key, requests + 1, { ex: 86400 });
-  return { allowed: true, remaining: 3 - requests - 1 };
-}
 
 function containsSpam(text) {
   const spamWords = [
@@ -147,31 +122,14 @@ export default async function handler(req, res) {
       });
     }
 
-    // IP Rate Limit
+    // Get IP for logging
     const ip = req.headers['x-forwarded-for']?.split(',')[0] ||
                req.headers['x-real-ip'] ||
                req.socket.remoteAddress ||
                'unknown';
 
-    const ipLimit = await checkIPRateLimit(ip);
-    if (!ipLimit.allowed) {
-      return res.status(429).json({
-        success: false,
-        errorCode: 'ipRateLimitExceeded'
-      });
-    }
-
-    // Email Rate Limit
-    const emailLimit = await checkEmailRateLimit(email);
-    if (!emailLimit.allowed) {
-      return res.status(429).json({
-        success: false,
-        errorCode: 'emailRateLimitExceeded'
-      });
-    }
-
     // ============================================
-    // SEND EMAIL - FIXED VERSION
+    // SEND EMAIL
     // ============================================
 
     console.log('📧 Attempting to send email...');
@@ -220,14 +178,6 @@ export default async function handler(req, res) {
                 <p class="label">💬 მესიჯი:</p>
                 <p style="white-space: pre-wrap;">${message}</p>
               </div>
-
-              <div class="info" style="border-left-color: #28a745;">
-                <p style="margin: 0; font-size: 12px;">
-                  <span class="label">ℹ️ Rate Limit Status:</span><br>
-                  IP: ${ipLimit.remaining} მოთხოვნა დარჩა (1 საათში)<br>
-                  Email: ${emailLimit.remaining} მოთხოვნა დარჩა (24 საათში)
-                </p>
-              </div>
             </div>
 
             <div class="footer">
@@ -240,7 +190,6 @@ export default async function handler(req, res) {
       `
     });
 
-    // ✅ DETAILED LOGGING
     console.log('📬 Resend API Response:', JSON.stringify(result, null, 2));
 
     // Check if result has error
@@ -263,7 +212,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // Fallback - no error but also no id
+    // Fallback
     console.warn('⚠️ Resend response unclear:', result);
     return res.status(200).json({
       success: true,
